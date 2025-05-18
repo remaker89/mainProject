@@ -33,9 +33,12 @@ import tkinter as tk
 # 파일 선택 창 생성하는 모듈
 from tkinter import filedialog, Label
 from PIL import Image,ImageTk
+from numpy.ma.core import left_shift
 
 testwindow=tk.Tk() # window 생성
 testwindow.title('open file') # window 이름
+testwindow.geometry("1000x900") # window의 크기지정
+testwindow.resizable(True,True) # window의 창의 크기 조절
 
 select_img_label=None # 선탟한 이미지의 라벨 변수
 select_img=None # 선택한 이미지 변수
@@ -55,7 +58,24 @@ def openFile(): # 파일 여는 함수
 
     select_img_label=Label(image=select_img).pack() # 라벨애 표시
 
+#def
 
+def fram(testwindow): # 프레인생성
+    left_frame=tk.Frame(testwindow,width=100,height=100,relief="solid",bg='blue')
+    left_frame.place(x=0,y=0)
+    left_frame.pack(side="left",fill="both",expand=True)
 
-select_img_chg=tk.Button(testwindow,text='이미지 열기', command=openFile).pack()
+    right_frame=tk.Frame(testwindow,width=100,height=100,relief="solid",bg='red')
+    left_frame.place(x=120, y=0)
+    right_frame.pack(side="right",fill="both",expand=True)
+
+    #down_frame=tk.Frame(testwindow,relief="solid",bg='red')
+    #right_frame.pack(side="",fill="both",expand=True)
+
+    return left_frame, right_frame
+
+left_frame, right_frame=fram(testwindow)
+
+select_img_chg=tk.Button(left_frame,text='이미지 열기', command=openFile).pack()
+select_img_download=tk.Button(right_frame,text='이미지 저장하기', command=openFile).pack()
 testwindow.mainloop()
