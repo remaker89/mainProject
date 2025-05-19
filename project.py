@@ -56,26 +56,29 @@ def openFile(): # 파일 여는 함수
     if select_img_label is not None:
         select_img_label.destroy()
 
-    select_img_label=Label(image=select_img).pack() # 라벨애 표시
+    select_img_label=Label(left_frame,image=select_img).pack() # 라벨에 표시, 왼쪽 프레임에 이미지를 생성
 
 #def
 
 def fram(testwindow): # 프레인생성
-    left_frame=tk.Frame(testwindow,width=100,height=100,relief="solid",bg='blue')
-    left_frame.place(x=0,y=0)
-    left_frame.pack(side="left",fill="both",expand=True)
+    global left_frame,right_frame
 
-    right_frame=tk.Frame(testwindow,width=100,height=100,relief="solid",bg='red')
-    left_frame.place(x=120, y=0)
-    right_frame.pack(side="right",fill="both",expand=True)
+    left_frame=tk.Frame(testwindow,relief="solid",bg='blue')
+    #left_frame.place(x=0,y=0)
+    left_frame.pack(side="left",fill="both",expand=True,padx=20,pady=20)
 
-    #down_frame=tk.Frame(testwindow,relief="solid",bg='red')
-    #right_frame.pack(side="",fill="both",expand=True)
+    right_frame=tk.Frame(testwindow,relief="solid",bg='red')
+    #left_frame.place(x=120, y=0)
+    right_frame.pack(side="right",fill="both",expand=True,padx=20,pady=20)
 
-    return left_frame, right_frame
+    down_frame=tk.Frame(testwindow,relief="sunken",bg='green')
+    down_frame.pack(side="bottom",fill="x",expand=True,padx=20,pady=20)
 
-left_frame, right_frame=fram(testwindow)
 
-select_img_chg=tk.Button(left_frame,text='이미지 열기', command=openFile).pack()
+    return left_frame, right_frame, down_frame
+
+left_frame, right_frame, down_frame=fram(testwindow)
+
+select_img_chg=tk.Button(right_frame,text='이미지 열기', command=openFile).pack()
 select_img_download=tk.Button(right_frame,text='이미지 저장하기', command=openFile).pack()
 testwindow.mainloop()
