@@ -35,6 +35,8 @@ from tkinter import filedialog, Label
 from PIL import Image,ImageTk
 from numpy.ma.core import left_shift
 
+from project import right_frame
+
 testwindow=tk.Tk() # window 생성
 testwindow.title('open file') # window 이름
 testwindow.geometry("1000x900") # window의 크기지정
@@ -61,23 +63,23 @@ def openFile(): # 파일 여는 함수
 #def
 
 def fram(testwindow): # 프레인생성
-    global left_frame,right_frame
-
-    left_frame=tk.Frame(testwindow,relief="solid",bg='blue')
-    #left_frame.place(x=0,y=0)
-    left_frame.pack(side="left",fill="both",expand=True,padx=20,pady=20)
-
-    right_frame=tk.Frame(testwindow,relief="solid",bg='red')
-    #left_frame.place(x=120, y=0)
-    right_frame.pack(side="right",fill="both",expand=True,padx=20,pady=20)
+    global top_frame,down_frame,left_frame,right_frame
 
     down_frame=tk.Frame(testwindow,relief="sunken",bg='green')
-    down_frame.pack(side="bottom",fill="x",expand=True,padx=20,pady=20)
+    down_frame.pack(side="bottom",fill="x",expand=False,padx=20,pady=20)
 
+    top_frame=tk.Frame(testwindow,relief="sunken",bg='black')
+    top_frame.pack(side="top",fill="both",expand=True)
 
-    return left_frame, right_frame, down_frame
+    left_frame=tk.Frame(top_frame,relief="solid",bg='red')
+    left_frame.pack(side="left",fill="both",expand=True,padx=20,pady=20)
 
-left_frame, right_frame, down_frame=fram(testwindow)
+    right_frame = tk.Frame(top_frame, relief="solid", bg='blue')
+    right_frame.pack(side="left", fill="both", expand=True, padx=20, pady=20)
+
+    return down_frame, top_frame,left_frame,right_frame
+
+down_frame,top_frame,left_frame,right_frame=fram(testwindow)
 
 select_img_chg=tk.Button(right_frame,text='이미지 열기', command=openFile).pack()
 select_img_download=tk.Button(right_frame,text='이미지 저장하기', command=openFile).pack()
