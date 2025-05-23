@@ -33,9 +33,7 @@ import tkinter as tk
 # 파일 선택 창 생성하는 모듈
 from tkinter import filedialog, Label
 from PIL import Image,ImageTk
-from numpy.ma.core import left_shift
 
-from project import right_frame
 
 testwindow=tk.Tk() # window 생성
 testwindow.title('open file') # window 이름
@@ -44,6 +42,7 @@ testwindow.resizable(True,True) # window의 창의 크기 조절
 
 select_img_label=None # 선탟한 이미지의 라벨 변수
 select_img=None # 선택한 이미지 변수
+saved_img=None
 
 def openFile(): # 파일 여는 함수
     global select_img,select_img_label
@@ -51,18 +50,44 @@ def openFile(): # 파일 여는 함수
 
     # 파일을 선택할 수 있는 메서드(파일 타입)
     root_select_img=filedialog.askopenfilename(filetypes=img_filetypes)
-    #Label(testwindow,text=root_select_img).pack() # 이미지 파일 경로 라벨
+    Label(testwindow,text=root_select_img).pack() # 이미지 파일 경로 라벨
 
-    select_img= ImageTk.PhotoImage(Image.open(root_select_img)) # 선택한 파일의 경로
+    #print(type(root_select_img))
 
+    select_img1=cv2.imread(root_select_img)
+    print(type(select_img1))
+    # opencv로 직접 처리가 가능하지만 tkinter의 label에서 표시하기 위해 객체로 변환해야함
+    select_img1 = cv2.cvtColor(select_img1, cv2.COLOR_BGR2RGB)
+    select_img1=Image.fromarray(select_img1)
+    select_img1=ImageTk.PhotoImage(select_img1)
+
+    #select_img= ImageTk.PhotoImage(Image.open(root_select_img)) # 선택한 파일의 경로
+
+    #기존의 선택된 이미지의 label을 제거
     if select_img_label is not None:
         select_img_label.destroy()
 
-    select_img_label=Label(left_frame,image=select_img).pack() # 라벨에 표시, 왼쪽 프레임에 이미지를 생성
+    # 어느 위치, 어떤 이미지등의 속성들을 선언
+    select_img_label=Label(left_frame,image=select_img1) # 라벨에 표시, 왼쪽 프레임에 이미지를 생성
+    select_img_label.image = select_img1
+    # 어느위치에 배치할건지
+    select_img_label.pack()
 
-#def
 
-def fram(testwindow): # 프레인생성
+def save_img(): # 이미지 저장하는 함수
+    global saved_img
+    img_filetypes = (('png file', '*.png'), ('jpg files', '*.jpg'))
+
+    if saved_img is None:
+        return
+
+    img_path=filedialog.askopenfilename(filetypes=img_filetypes)
+
+    if img_path:
+        saved_img.save(img_path)
+
+
+def fram(testwindow): # 프레임 생성
     global top_frame,down_frame,left_frame,right_frame
 
     down_frame=tk.Frame(testwindow,relief="sunken",bg='green')
