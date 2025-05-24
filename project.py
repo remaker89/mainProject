@@ -29,9 +29,10 @@
 
 
 import numpy as np,cv2
+import random
 import tkinter as tk
 # 파일 선택 창 생성하는 모듈
-from tkinter import filedialog, Label
+from tkinter import filedialog, Label,Canvas
 from PIL import Image,ImageTk
 
 
@@ -42,11 +43,13 @@ testwindow.resizable(True,True) # window의 창의 크기 조절
 
 select_img_label=None # 선탟한 이미지의 라벨 변수
 select_img=None
+
 drawing = False  # 드래그 상태
 ix, iy = -1, -1  # 시작 좌표
+rect_id = None # canvas 사각형의 id
 
 def openFile(): # 파일 여는 함수
-    global select_img,select_img_label
+    global select_img,select_img_label,canvas
     img_filetypes=(('png file','*.png'),('jpg files','*.jpg')) # 파일 타입 설정
 
     # 파일을 선택할 수 있는 메서드(파일 타입)
@@ -54,13 +57,12 @@ def openFile(): # 파일 여는 함수
     Label(testwindow,text=root_select_img).pack() # 이미지 파일 경로 라벨
 
     #print(type(root_select_img))
-
     select_img=cv2.imread(root_select_img)
     #print(type(select_img))
     # opencv로 직접 처리가 가능하지만 tkinter의 label에서 표시하기 위해 객체로 변환해야함
-    select_img1 = cv2.cvtColor(select_img, cv2.COLOR_BGR2RGB)
-    select_img1=Image.fromarray(select_img1)
-    select_img1=ImageTk.PhotoImage(select_img1)
+    select_img_RGB = cv2.cvtColor(select_img, cv2.COLOR_BGR2RGB)
+    select_img_PIL=Image.fromarray(select_img_RGB) #PIL변환
+    select_img1=ImageTk.PhotoImage(select_img_PIL)
 
     #select_img= ImageTk.PhotoImage(Image.open(root_select_img)) # 선택한 파일의 경로
 
@@ -72,7 +74,37 @@ def openFile(): # 파일 여는 함수
     select_img_label=Label(left_frame,image=select_img1) # 라벨에 표시, 왼쪽 프레임에 이미지를 생성
     select_img_label.image = select_img1
     # 어느위치에 배치할건지
-    select_img_label.pack()
+    #select_img_label.pack()
+
+    for widget in left_frame.winfo_children():
+        widget.destroy()
+
+        # 새로운 Canvas 위에 이미지 배치
+    canvas = Canvas(left_frame, width=select_img_PIL.width, height=select_img_PIL.height)
+    canvas.pack()
+    canvas.create_image(0, 0, anchor="nw", image=select_img1)
+
+    # 마우스 이벤트 바인딩
+    canvas.bind("<ButtonPress-1>", onmouse_down)
+    canvas.bind("<B1-Motion>", onmouse_move)
+    canvas.bind("<ButtonRelease-1>", onmouse_up)
+
+def onmouse_down(event): # 마우스를 클릭하면
+    global drawing, ix,iy, rect_id
+    drawing=True
+    ix,iy=event.x,event.y
+    random_color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
+    rect_id = canvas.create_rectangle(ix, iy, event.x, event.y,fill=random_color, outline=random_color, width=2)
+
+
+def onmouse_move(event):
+    global rect_id,canvas
+    canvas.coords(rect_id, ix, iy, event.x, event.y)
+
+
+def onmouse_up(event):
+    global drawing
+    drawing = False
 
 def save_img(): # 이미지 저장하는 함수
     img_types = []
