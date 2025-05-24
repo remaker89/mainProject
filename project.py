@@ -1,5 +1,6 @@
 ### 간단한 이미지 모자이크 도구
 ## 개요
+from string import whitespace
 
 # 목적 : 사용자가 지정한 이미지의 일부 영역(예: 얼굴, 번호판 등)에 손쉽게 모자이크
 # 처리를 할 수 있는 프로그램을 개발한다.
@@ -38,15 +39,15 @@ from PIL import Image,ImageTk
 
 testwindow=tk.Tk() # window 생성
 testwindow.title('open file') # window 이름
-testwindow.geometry("1000x900") # window의 크기지정
-testwindow.resizable(True,True) # window의 창의 크기 조절
+testwindow.geometry("900x800") # window의 크기지정
+testwindow.resizable(0,0) # window의 창의 크기 조절
 
 select_img_label=None # 선탟한 이미지의 라벨 변수
-select_img=None
 
 drawing = False  # 드래그 상태
 ix, iy = -1, -1  # 시작 좌표
-rect_id = None # canvas 사각형의 id
+rect_id_list =[]
+#rect_id = None # canvas 사각형의 id
 
 def openFile(): # 파일 여는 함수
     global select_img,select_img_label,canvas
@@ -62,6 +63,7 @@ def openFile(): # 파일 여는 함수
     # opencv로 직접 처리가 가능하지만 tkinter의 label에서 표시하기 위해 객체로 변환해야함
     select_img_RGB = cv2.cvtColor(select_img, cv2.COLOR_BGR2RGB)
     select_img_PIL=Image.fromarray(select_img_RGB) #PIL변환
+    select_img_PIL.thumbnail((400,400))
     select_img1=ImageTk.PhotoImage(select_img_PIL)
 
     #select_img= ImageTk.PhotoImage(Image.open(root_select_img)) # 선택한 파일의 경로
@@ -79,23 +81,27 @@ def openFile(): # 파일 여는 함수
     for widget in left_frame.winfo_children():
         widget.destroy()
 
-        # 새로운 Canvas 위에 이미지 배치
+    # 새로운 Canvas 위에 이미지 배치
+
     canvas = Canvas(left_frame, width=select_img_PIL.width, height=select_img_PIL.height)
-    canvas.pack()
+    canvas.place(relx=0.5, rely=0.5,width=560,height=719, anchor="center")  # 중앙 배치
     canvas.create_image(0, 0, anchor="nw", image=select_img1)
 
     # 마우스 이벤트 바인딩
-    canvas.bind("<ButtonPress-1>", onmouse_down)
-    canvas.bind("<B1-Motion>", onmouse_move)
-    canvas.bind("<ButtonRelease-1>", onmouse_up)
+    canvas.bind("<ButtonPress-1>", onmouse_down) # 마우스 누름
+    canvas.bind("<B1-Motion>", onmouse_move) # 마우스 움직임
+    canvas.bind("<ButtonRelease-1>", onmouse_up) # 마우스 때기
 
 def onmouse_down(event): # 마우스를 클릭하면
-    global drawing, ix,iy, rect_id
+    global drawing, ix,iy, rect_id, rect_id_list
     drawing=True
     ix,iy=event.x,event.y
-    random_color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
-    rect_id = canvas.create_rectangle(ix, iy, event.x, event.y,fill=random_color, outline=random_color, width=2)
 
+    random_color = "#{:06x}".format(random.randint(0, 0xFFFFFF)) # 랜덤한 컬러 적용
+    # id의 위치를 확인하고 사각형의 형태로 그림
+    rect_id = canvas.create_rectangle(ix, iy, event.x, event.y,fill=random_color, outline='white', width=2)
+    rect_id_list.append(rect_id) # list에 rect_id를 저장
+    #print(rect_id_list)
 
 def onmouse_move(event):
     global rect_id,canvas
@@ -105,6 +111,30 @@ def onmouse_move(event):
 def onmouse_up(event):
     global drawing
     drawing = False
+
+def back_shape(event=None): # 가장 마지막에 그린 도형 삭제
+    global rect_id_list,rect_id
+    if rect_id_list:
+        rect_id=rect_id_list.pop() # list의 마지막 id 삭제
+        canvas.delete(rect_id) # id를 가진 도형 삭제
+
+def filter(): # 블러 기본 필터 정보
+    rows, cols = select_img.shape[:2]
+    dst = np.zeros((rows, cols), np.float32)
+    xcenter, ycenter = mask.shape[1] // 2, mask.shape[0] // 2
+
+    for i in range(ycenter, rows - ycenter):
+        for j in range(xcenter, cols - xcenter):
+            y1, y2 = i - ycenter, i + ycenter + 1
+            x1, x2 = j - xcenter, j + xcenter + 1
+            roi = select_img[y1:y2, x1:x2].astype("float32")
+
+            tmp = cv2.multiply(roi, mask)
+            dst[i, j] = cv2.sumElems(tmp)[0]
+    return dst
+
+#def blur_opencv():
+
 
 def save_img(): # 이미지 저장하는 함수
     img_types = []
@@ -129,16 +159,28 @@ def fram(testwindow): # 프레임 생성
     top_frame=tk.Frame(testwindow,relief="sunken",bg='black')
     top_frame.pack(side="top",fill="both",expand=True)
 
-    left_frame=tk.Frame(top_frame,relief="solid",bg='red')
+    left_frame=tk.Frame(top_frame,width=400,height=400,relief="solid",bg='red')
     left_frame.pack(side="left",fill="both",expand=True,padx=20,pady=20)
 
-    right_frame = tk.Frame(top_frame, relief="solid", bg='blue')
+    right_frame = tk.Frame(top_frame,width=300,height=100, relief="solid", bg='blue')
     right_frame.pack(side="left", fill="both", expand=True, padx=20, pady=20)
 
     return down_frame, top_frame,left_frame,right_frame
 
 down_frame,top_frame,left_frame,right_frame=fram(testwindow)
+data=[1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9]
+mask=np.array(data,np.float32).reshape(3,3)
 
 select_img_chg=tk.Button(right_frame,text='이미지 열기', command=openFile).pack()
 select_img_download=tk.Button(right_frame,text='이미지 저장하기', command=save_img).pack()
+back=tk.Button(right_frame,text="전으로 돌아가기", command=back_shape).pack()
+blur_img=tk.Button(right_frame,text="블러 적용",command=filter).pack()
+
+
+''''''
+def get_frame_size():
+    print(f"Frame 크기: {left_frame.winfo_width()} x {left_frame.winfo_height()}")
+
+testwindow.after(100, get_frame_size)  # 100ms 후 크기 확인
+
 testwindow.mainloop()
