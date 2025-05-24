@@ -41,8 +41,9 @@ testwindow.geometry("1000x900") # window의 크기지정
 testwindow.resizable(True,True) # window의 창의 크기 조절
 
 select_img_label=None # 선탟한 이미지의 라벨 변수
-select_img=None # 선택한 이미지 변수
-saved_img=None
+select_img=None
+drawing = False  # 드래그 상태
+ix, iy = -1, -1  # 시작 좌표
 
 def openFile(): # 파일 여는 함수
     global select_img,select_img_label
@@ -54,10 +55,10 @@ def openFile(): # 파일 여는 함수
 
     #print(type(root_select_img))
 
-    select_img1=cv2.imread(root_select_img)
-    print(type(select_img1))
+    select_img=cv2.imread(root_select_img)
+    #print(type(select_img))
     # opencv로 직접 처리가 가능하지만 tkinter의 label에서 표시하기 위해 객체로 변환해야함
-    select_img1 = cv2.cvtColor(select_img1, cv2.COLOR_BGR2RGB)
+    select_img1 = cv2.cvtColor(select_img, cv2.COLOR_BGR2RGB)
     select_img1=Image.fromarray(select_img1)
     select_img1=ImageTk.PhotoImage(select_img1)
 
@@ -73,19 +74,19 @@ def openFile(): # 파일 여는 함수
     # 어느위치에 배치할건지
     select_img_label.pack()
 
-
 def save_img(): # 이미지 저장하는 함수
-    global saved_img
+    img_types = []
+    # 파일형식을 img_types에 추가
     img_filetypes = (('png file', '*.png'), ('jpg files', '*.jpg'))
 
-    if saved_img is None:
-        return
+    img_path=filedialog.asksaveasfilename(title="save image",filetypes=img_filetypes)
+    print(type(select_img))
 
-    img_path=filedialog.askopenfilename(filetypes=img_filetypes)
+    # 경로 + 파일 형식
+    img_path=img_path+".png" # if img_filetypes =="*.png" else img_path+".jpg"
 
-    if img_path:
-        saved_img.save(img_path)
-
+    if select_img is not None and img_path:
+        cv2.imwrite(img_path,select_img)
 
 def fram(testwindow): # 프레임 생성
     global top_frame,down_frame,left_frame,right_frame
@@ -107,5 +108,5 @@ def fram(testwindow): # 프레임 생성
 down_frame,top_frame,left_frame,right_frame=fram(testwindow)
 
 select_img_chg=tk.Button(right_frame,text='이미지 열기', command=openFile).pack()
-select_img_download=tk.Button(right_frame,text='이미지 저장하기', command=openFile).pack()
+select_img_download=tk.Button(right_frame,text='이미지 저장하기', command=save_img).pack()
 testwindow.mainloop()
