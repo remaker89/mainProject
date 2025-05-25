@@ -44,7 +44,9 @@ testwindow.geometry("900x800") # window의 크기지정
 testwindow.resizable(0,0) # window의 창의 크기 조절
 
 select_img_label=None # 선탟한 이미지의 라벨 변수
+blur_img_label=None
 select_img=None
+
 drawing = False  # 드래그 상태
 ix, iy = -1, -1 # 시작 좌표
 ex, ey = -1, -1
@@ -164,11 +166,31 @@ def blur():
     img_key_value = blur_select_img
     img_history.append(img_key_value)
     print(img_history)
+    update_blur_img(blur_select_img)
     return blur_select_img
 
 def pixel_blur(select_img, mask): # 기존 filter 적용 방식보다 더 연산이 짧은 코드
     return cv2.filter2D(select_img, -1, mask)
 
+
+def update_blur_img(blur_select_img):
+    global blur_img_label, blur_img,rect_id_list, rect_id
+    blur_img=blur_select_img
+    blur_img_RGB = cv2.cvtColor(blur_select_img, cv2.COLOR_BGR2RGB)
+    blur_img_PIL = Image.fromarray(blur_img_RGB)
+    blur_img1 = ImageTk.PhotoImage(blur_img_PIL)
+
+    if blur_img_label is not None:
+        blur_img_label.destroy()
+
+
+    if rect_id_list:
+        for i in rect_id_list:
+            canvas.delete(i)  # id를 가진 도형 삭제
+        rect_id_list.clear()
+
+    blur_img_label = Label(left_frame, image=blur_img1)  # 라벨에 표시, 왼쪽 프레임에 이미지를 생성
+    blur_img_label.image = blur_img1
 
 def save_img(): # 이미지 저장하는 함수
     img_types = []
