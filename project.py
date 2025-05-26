@@ -34,7 +34,7 @@ import random
 import tkinter as tk
 import math
 # 파일 선택 창 생성하는 모듈
-from tkinter import filedialog, Label,Canvas
+from tkinter import filedialog, Label,Canvas,Scale
 from PIL import Image,ImageTk
 
 
@@ -52,12 +52,14 @@ ix, iy = -1, -1 # 시작 좌표
 ex, ey = -1, -1
 rect_id_list =[]
 img_history=[]
-scale=1,1
+scale = 1.0
 canvas = None
+new_width, new_height = None, None
+intensity=121
 #rect_id = None # canvas 사각형의 id
 
 def openFile(): # 파일 여는 함수
-    global select_img,select_img_label,canvas, scale
+    global select_img,select_img_label,canvas, scale,new_width, new_height
     img_filetypes=(('png file','*.png'),('jpg files','*.jpg')) # 파일 타입 설정
 
     # 파일을 선택할 수 있는 메서드(파일 타입)
@@ -146,19 +148,35 @@ def back_shape(event=None): # 가장 마지막에 그린 도형 삭제
         canvas.delete(rect_id) # id를 가진 도형 삭제
 
 
-def blur():
+def update_intensity(val): # 트랙바 값 변경시에 실행됨
+    global intensity
+    # 값이 홀수의 제곱이 되야하기 때문에 강제로 홀수로 만들고 제곱을 시켜줌
+    if intensity%2!=0:
+        intensity=intensity+1
+
+    intensity=max(int(val),1) **2
+
+
+    #blur() # 이미지가 없을때 실행이 되어서 오류가 뜸
+
+
+def blur(intensity): # 블러 처리
     global img_history,select_img
-    intensity = 169
+
+    if select_img is None: # 이미지가 아직 열리지 않았으면
+        return
+    if (ix==-1 or iy==-1 or ex==-1 or ey==-1): # 사각형이 그려지지 않으면
+        return
+
     coords=[ix,iy,ex,ey] # 드래그한 사각형의 좌표
     blur_select_img = select_img
-    start_x, start_y, end_x, end_y = [int(c * scale) for c in coords] # 기존 이미지의 좌표, 임시로 float형태를 int형으로 변환
+    start_x, start_y, end_x, end_y = [int(c * (1/scale)) for c in coords] # 기존 이미지의 좌표, 임시로 float형태를 int형으로 변환
     print(scale)
     roi = blur_select_img[start_y:end_y, start_x:end_x]
-    cv2.imshow("fuck",roi)
-    I = intensity
+    cv2.imshow("fuck",roi) # 브러처리한 부분
     # 플러 처리할 data, mask 설정
-    data = [1 / I for _ in range(I)]
-    blur_mask = np.array(data, np.float32).reshape(int(math.sqrt(I)), int(math.sqrt(I)))
+    data = [1 / intensity for _ in range(intensity)]
+    blur_mask = np.array(data, np.float32).reshape(int(math.sqrt(intensity)), int(math.sqrt(intensity)))
     blur_roi = pixel_blur(roi, blur_mask)
 
     blur_select_img[start_y:end_y, start_x:end_x] = blur_roi
@@ -168,22 +186,22 @@ def blur():
     img_history.append(img_key_value)
     print(img_history)
     update_blur_img(blur_select_img)
-    return blur_select_img
 
 def pixel_blur(select_img, mask): # 기존 filter 적용 방식보다 더 연산이 짧은 코드
     return cv2.filter2D(select_img, -1, mask)
 
 
-def update_blur_img(blur_select_img):
-    global blur_img_label, blur_img,rect_id_list, rect_id
+def update_blur_img(blur_select_img): # blur에서 blur 처리한 이미지를 컨버스 위에 보이게 함
+    global blur_img_label, blur_img,rect_id_list, rect_id, new_width, new_height
     blur_img=blur_select_img
     blur_img_RGB = cv2.cvtColor(blur_select_img, cv2.COLOR_BGR2RGB)
-    blur_img_PIL = Image.fromarray(blur_img_RGB)
+    # resize 전처리가 PIL함수이므로 이 줄에 적용시켜줘야하는거였음!!!!!!!
+    blur_img_PIL = Image.fromarray(blur_img_RGB).resize((new_width, new_height), Image.Resampling.LANCZOS)
     blur_img1 = ImageTk.PhotoImage(blur_img_PIL)
+
 
     if blur_img_label is not None:
         blur_img_label.destroy()
-
 
     if rect_id_list:
         for i in rect_id_list:
@@ -194,19 +212,31 @@ def update_blur_img(blur_select_img):
     canvas.image = blur_img1
 
 
-def save_img(): # 이미지 저장하는 함수
-    img_types = []
+def save_img_png(): # 이미지 저장하는 함수
     # 파일형식을 img_types에 추가
     img_filetypes = (('png file', '*.png'), ('jpg files', '*.jpg'))
 
     img_path=filedialog.asksaveasfilename(title="save image",filetypes=img_filetypes)
-    print(type(select_img))
+    print(type(blur_img))
 
     # 경로 + 파일 형식
     img_path=img_path+".png" # if img_filetypes =="*.png" else img_path+".jpg"
 
     if select_img is not None and img_path:
-        cv2.imwrite(img_path,select_img)
+        cv2.imwrite(img_path,blur_img)
+
+def save_img_jpg(): # 이미지 저장하는 함수
+    # 파일형식을 img_types에 추가
+    img_filetypes = (('png file', '*.png'), ('jpg files', '*.jpg'))
+
+    img_path=filedialog.asksaveasfilename(title="save image",filetypes=img_filetypes)
+    print(type(blur_img))
+
+    # 경로 + 파일 형식
+    img_path=img_path+".jpg" # if img_filetypes =="*.png" else img_path+".jpg"
+
+    if select_img is not None and img_path:
+        cv2.imwrite(img_path,blur_img)
 
 def fram(testwindow): # 프레임 생성
     global top_frame,down_frame,left_frame,right_frame
@@ -226,14 +256,17 @@ def fram(testwindow): # 프레임 생성
     return down_frame, top_frame,left_frame,right_frame
 
 down_frame,top_frame,left_frame,right_frame=fram(testwindow)
-data=[1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9]
-mask=np.array(data,np.float32).reshape(3,3)
 
 select_img_chg=tk.Button(right_frame,text='이미지 열기', command=openFile).pack()
-select_img_download=tk.Button(right_frame,text='이미지 저장하기', command=save_img).pack()
+select_img_download_png=tk.Button(right_frame,text='PNG로 이미지 저장하기', command=save_img_png).pack()
+select_img_download_jpg=tk.Button(right_frame,text='JPG로 이미지 저장하기', command=save_img_jpg).pack()
 back=tk.Button(right_frame,text="전으로 돌아가기", command=back_shape).pack()
-blur_img=tk.Button(right_frame,text="블러 적용",command=blur).pack()
+blur_img=tk.Button(right_frame,text="블러 적용",command=lambda: blur(intensity)).pack()
 
+# 위치, 최소값, 최대밗, 수평 슬라이더, 트랙바 이름, 적용할 함수
+intensity_slider = tk.Scale(down_frame, from_=1, to=50, orient="horizontal", label="Intensity", command=update_intensity)
+intensity_slider.pack(pady=10)  # 아래 프레임에 추가
+intensity_slider.set(10)
 
 ''''''
 def get_frame_size(): # 왼쪽 프레임 크기 확인
