@@ -53,6 +53,7 @@ ex, ey = -1, -1
 rect_id_list =[]
 img_history=[]
 scale=1,1
+canvas = None
 #rect_id = None # canvas 사각형의 id
 
 def openFile(): # 파일 여는 함수
@@ -147,7 +148,7 @@ def back_shape(event=None): # 가장 마지막에 그린 도형 삭제
 
 def blur():
     global img_history,select_img
-    intensity = 121
+    intensity = 169
     coords=[ix,iy,ex,ey] # 드래그한 사각형의 좌표
     blur_select_img = select_img
     start_x, start_y, end_x, end_y = [int(c * scale) for c in coords] # 기존 이미지의 좌표, 임시로 float형태를 int형으로 변환
@@ -189,8 +190,9 @@ def update_blur_img(blur_select_img):
             canvas.delete(i)  # id를 가진 도형 삭제
         rect_id_list.clear()
 
-    blur_img_label = Label(left_frame, image=blur_img1)  # 라벨에 표시, 왼쪽 프레임에 이미지를 생성
-    blur_img_label.image = blur_img1
+    canvas.create_image(0, 0, anchor="nw", image=blur_img1)
+    canvas.image = blur_img1
+
 
 def save_img(): # 이미지 저장하는 함수
     img_types = []
