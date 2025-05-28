@@ -27,8 +27,7 @@ from string import whitespace
 
 
 
-
-## 다음에 구현하고 싶은거: 블러 처리할 사각형이 한 개만 블러 처리되서 여러개를 그리면 다 블러처리가 되도록, 블러말고 최대값/최솟값 필터링 한번 도전, 외적으로 꾸밀거 더 꾸미기 등등
+## 다음에 구현하고 싶은거:  외적으로 꾸밀거 더 꾸미기 등등
 
 import numpy as np,cv2
 import random
@@ -51,8 +50,7 @@ select_img=None
 drawing = False  # 드래그 상태
 ix, iy = -1, -1 # 시작 좌표
 ex, ey = -1, -1
-rect_id_list =[]
-img_history=[]
+rect_id_list ,img_history,coord=[],[],[]
 scale = 1.0
 canvas = None
 new_width, new_height, select_img1 = None, None,None
@@ -126,7 +124,7 @@ def openFile(): # 파일 여는 함수
 
 
 def onmouse_down(event): # 마우스를 클릭하면
-    global drawing, ix,iy, rect_id, rect_id_list
+    global drawing, ix,iy, rect_id, rect_id_list,coord
     drawing=True
     ix,iy=event.x,event.y
 
@@ -139,22 +137,30 @@ def onmouse_down(event): # 마우스를 클릭하면
 
 def onmouse_move(event):
     global rect_id,canvas,ex,ey
-
     ex = event.x
     ey = event.y
     canvas.coords(rect_id, ix, iy, event.x, event.y)
 
 
-def onmouse_up(event):
+
+def onmouse_up(event): # 마우스 방향에 따른 사각형 그리기
     global drawing
     drawing = False
-
+    tmp = [ix, iy, event.x, event.y]
+    if iy>event.y:
+        tmp = [ix, event.y,event.x, iy]
+    if ix>event.x:
+        tmp=[event.x,iy,ix,event.y]
+    if iy>event.y and ix>event.x:
+        tmp=[event.x, event.y,ix, iy ]
+    coord.append(tmp)
 
 def back_shape(event=None): # 가장 마지막에 그린 도형 삭제
     global rect_id_list,rect_id
     if rect_id_list:
         rect_id=rect_id_list.pop() # list의 마지막 id 삭제
         canvas.delete(rect_id) # id를 가진 도형 삭제
+
 
 
 def update_intensity(val): # 트랙바 값 변경시에 실행됨
@@ -170,34 +176,37 @@ def update_intensity(val): # 트랙바 값 변경시에 실행됨
 
 
 def blur(intensity): # 블러 처리
-    global img_history,select_img
+    global img_history,select_img,coord
 
-    if select_img is None: # 이미지가 아직 열리지 않았으면
+    if select_img is None or len(coord)==0: # 이미지가 아직 열리지 않았으면
         return
     if (ix==-1 or iy==-1 or ex==-1 or ey==-1): # 사각형이 그려지지 않으면
         return
-
-    coords=[ix,iy,ex,ey] # 드래그한 사각형의 좌표
-    blur_select_img = select_img
-    start_x, start_y, end_x, end_y = [int(c * (1/scale)) for c in coords] # 기존 이미지의 좌표, 임시로 float형태를 int형으로 변환
-    print(scale)
-    roi = blur_select_img[start_y:end_y, start_x:end_x]
-    cv2.imshow("fuck",roi) # 브러처리한 부분
-    # 플러 처리할 data, mask 설정
+    blur_select_img = select_img.copy()
+    #coords=[ix,iy,ex,ey] # 드래그한 사각형의 좌표
     data = [1 / intensity for _ in range(intensity)] # 마스크 원소 지정
     blur_mask = np.array(data, np.float32).reshape(int(math.sqrt(intensity)), int(math.sqrt(intensity))) # mask 크기에 행과 열 사이즈에 맞게 조절
-    blur_roi = pixel_blur(roi, blur_mask)
 
-    blur_select_img[start_y:end_y, start_x:end_x] = blur_roi
+    for i in coord:
+        start_x, start_y, end_x, end_y = [int(c * (1/scale)) for c in i] # 기존 이미지의 좌표, 임시로 float형태를 int형으로 변환
+        #print(coord)
+        #print(scale)
+        roi = blur_select_img[start_y:end_y, start_x:end_x]
+        #print(start_x, start_y, end_x, end_y)
+        #print(roi)
+        #cv2.imshow("fuck",roi) # 브러처리한 부분
+        # 플러 처리할 data, mask 설정
+        blur_roi = pixel_blur(roi, blur_mask)
+
+        blur_select_img[start_y:end_y, start_x:end_x] = blur_roi
     select_img = blur_select_img
 
-    img_key_value = blur_select_img
-    img_history.append(img_key_value)# 블러 씌운 이미지의 키값을 리스트에 저장
+    img_history.append(select_img)# 블러 씌운 이미지의 키값을 리스트에 저장
     print("img_history",img_history)
     update_blur_img(blur_select_img)
 
-def pixel_blur(select_img, mask): # 기존 filter 적용 방식보다 더 연산이 짧은 코드
-    return cv2.filter2D(select_img, -1, mask)
+def pixel_blur(roi, mask): # 기존 filter 적용 방식보다 더 연산이 짧은 코드
+    return cv2.filter2D(roi, -1, mask)
 
 
 def retrun_img(): # 도저히 다시 돌아가는 법을 못찾아 그냥 이미지를 다시 덮어씌우기로 함
