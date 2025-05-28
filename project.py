@@ -1,6 +1,5 @@
 ### 간단한 이미지 모자이크 도구
 ## 개요
-from string import whitespace
 
 # 목적 : 사용자가 지정한 이미지의 일부 영역(예: 얼굴, 번호판 등)에 손쉽게 모자이크
 # 처리를 할 수 있는 프로그램을 개발한다.
@@ -36,6 +35,8 @@ import math
 # 파일 선택 창 생성하는 모듈
 from tkinter import filedialog, Label,Canvas,Scale
 from PIL import Image,ImageTk
+from tkinter import ttk
+
 
 
 testwindow=tk.Tk() # window 생성
@@ -166,8 +167,9 @@ def back_shape(event=None): # 가장 마지막에 그린 도형 삭제
 def update_intensity(val): # 트랙바 값 변경시에 실행됨
     global intensity
     # 값이 홀수의 제곱이 되야하기 때문에 강제로 홀수로 만들고 제곱을 시켜줌
-    if intensity%2!=0:
-        intensity=intensity+1
+    val=int(float(val)) # 새로 넣은 트랙바가 정수형을 뱉어내서 실수로 바꿔줌
+    if val %2==0:
+        val +=1
 
     intensity=max(int(val),1) **2
 
@@ -192,6 +194,9 @@ def blur(intensity): # 블러 처리
         #print(coord)
         #print(scale)
         roi = blur_select_img[start_y:end_y, start_x:end_x]
+
+        if roi.size==0:
+            continue
         #print(start_x, start_y, end_x, end_y)
         #print(roi)
         #cv2.imshow("fuck",roi) # 브러처리한 부분
@@ -209,9 +214,10 @@ def pixel_blur(roi, mask): # 기존 filter 적용 방식보다 더 연산이 짧
     return cv2.filter2D(roi, -1, mask)
 
 
-def retrun_img(): # 도저히 다시 돌아가는 법을 못찾아 그냥 이미지를 다시 덮어씌우기로 함
+def return_img(): # 도저히 다시 돌아가는 법을 못찾아 그냥 이미지를 다시 덮어씌우기로 함
     global select_img, img_history
     if img_history:
+        select_img=img_history[0].copy()
         select_img=img_history.clear() # history에 있는 정보 전체 지우기
         canvas.create_image(0,0, anchor="nw", image=select_img1)
 
@@ -267,9 +273,15 @@ def save_img_png(): # 이미지 저장하는 함수
     print(type(blur_img))
 
     # 경로 + 파일 형식
-    img_path=img_path+".png" # if img_filetypes =="*.png" else img_path+".jpg"
+    # 만약에 끝에 파일명이 적어져있지 않으면 경로를 추가해 줌, lower는 소문자로 바꿔줌(대문자 방지)
+    if not img_path.lower().endswith(".png"):
+        if img_path.lower().endswith(".jpg"):
+            img_path = img_path[:-4]
+        img_path=img_path+".png" # if img_filetypes =="*.png" else img_path+".jpg"
 
     if select_img is not None and img_path:
+        if img_path.lower().endswith(".png"):
+            img_path = img_path[:-4]
         cv2.imwrite(img_path,blur_img)
 
 def save_img_jpg(): # 이미지 저장하는 함수
@@ -280,7 +292,10 @@ def save_img_jpg(): # 이미지 저장하는 함수
     print(type(blur_img))
 
     # 경로 + 파일 형식
-    img_path=img_path+".jpg" # if img_filetypes =="*.png" else img_path+".jpg"
+    if not img_path.lower().endswith(".jpg"):
+        if img_path.lower().endswith(".png"):
+            img_path = img_path[:-4]
+        img_path=img_path+".jpg" # if img_filetypes =="*.png" else img_path+".jpg"
 
     if select_img is not None and img_path:
         cv2.imwrite(img_path,blur_img)
@@ -304,17 +319,18 @@ def fram(testwindow): # 프레임 생성
 
 down_frame,top_frame,left_frame,right_frame=fram(testwindow)
 
-select_img_chg=tk.Button(right_frame,text='이미지 열기', command=openFile).pack(pady=10)
-select_img_download_png=tk.Button(right_frame,text='PNG로 이미지 저장하기', command=save_img_png).pack(pady=10)
-select_img_download_jpg=tk.Button(right_frame,text='JPG로 이미지 저장하기', command=save_img_jpg).pack(pady=10)
-rolate_img_left=tk.Button(right_frame,text='왼쪽으로 회전', command=rotate_left).pack(pady=10)
-rolate_img_right=tk.Button(right_frame,text='오른쪽으로 회전', command=rotate_right).pack(pady=10)
-back=tk.Button(right_frame,text="전으로 돌아가기", command=back_shape).pack(pady=10)
-return_btn=tk.Button(right_frame, text='처음 이미지로 돌아가기',command=retrun_img).pack(pady=10)
-blur_img=tk.Button(right_frame,text="블러 적용",command=lambda: blur(intensity)).pack(pady=10)
+select_img_chg=ttk.Button(right_frame,text='이미지 열기', command=openFile).pack(pady=10)
+select_img_download_png=ttk.Button(right_frame,text='PNG로 이미지 저장하기', command=save_img_png).pack(pady=10)
+select_img_download_jpg=ttk.Button(right_frame,text='JPG로 이미지 저장하기', command=save_img_jpg).pack(pady=10)
+rolate_img_left=ttk.Button(right_frame,text='왼쪽으로 회전', command=rotate_left).pack(pady=10)
+rolate_img_right=ttk.Button(right_frame,text='오른쪽으로 회전', command=rotate_right).pack(pady=10)
+back=ttk.Button(right_frame,text="전으로 돌아가기", command=back_shape).pack(pady=10)
+return_btn=ttk.Button(right_frame, text='처음 이미지로 돌아가기',command=return_img).pack(pady=10)
+blur_img=ttk.Button(right_frame,text="블러 적용",command=lambda: blur(intensity)).pack(pady=10)
+
 
 # 위치, 최소값, 최대밗, 수평 슬라이더, 트랙바 이름, 적용할 함수
-intensity_slider = tk.Scale(down_frame, from_=1, to=50, orient="horizontal", label="Intensity", command=update_intensity,length=300)
+intensity_slider = ttk.Scale(down_frame, from_=1, to=50, orient="horizontal", command=update_intensity,length=300)
 intensity_slider.pack(side='left', padx=10,pady=10)  # 아래 프레임에 추가
 intensity_slider.set(20)
 
@@ -324,5 +340,15 @@ def get_frame_size(): # 왼쪽 프레임 크기 확인
     print(f"Frame 크기: {left_frame.winfo_width()} x {left_frame.winfo_height()}")
 
 testwindow.after(100, get_frame_size)  # 100ms 후 크기 확인
+
+# Create a style
+style = ttk.Style(testwindow)
+
+# Import the tcl file
+testwindow.tk.call("source", "theme/forest-light.tcl")
+
+# Set the theme with the theme_use method
+style.theme_use("forest-light")
+
 
 testwindow.mainloop()
