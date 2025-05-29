@@ -54,13 +54,13 @@ ex, ey = -1, -1
 rect_id_list ,img_history,coord=[],[],[]
 scale = 1.0
 canvas = None
-new_width, new_height, select_img1 = None, None,None
+new_width, new_height, select_img1 ,image_on_canvas= None, None,None,None
 path_label = None
 intensity=121
 #rect_id = None # canvas 사각형의 id
 
 def openFile(): # 파일 여는 함수
-    global select_img,select_img_label,canvas, scale,new_width, new_height,select_img1,path_label
+    global select_img,select_img_label,canvas, scale,new_width, new_height,select_img1,path_label, image_on_canvas
     img_filetypes=(('png file','*.png'),('jpg files','*.jpg')) # 파일 타입 설정
 
     # 파일을 선택할 수 있는 메서드(파일 타입)
@@ -116,7 +116,7 @@ def openFile(): # 파일 여는 함수
     canvas.place(relx=0.5, rely=0.5, anchor="center")
 
     # 프레임 가로의 중앙에 위치하도록 함
-    canvas.create_image(0,0, anchor="nw", image=select_img1)
+    image_on_canvas=canvas.create_image(0,0, anchor="nw", image=select_img1)
     canvas.image = select_img1
     # 마우스 이벤트 바인딩
     canvas.bind("<ButtonPress-1>", onmouse_down) # 마우스 누름
@@ -221,19 +221,18 @@ def return_img(): # 도저히 다시 돌아가는 법을 못찾아 그냥 이미
         select_img=img_history.clear() # history에 있는 정보 전체 지우기
         canvas.create_image(0,0, anchor="nw", image=select_img1)
 
-def rotate_img(image,angle): # 이미지 회전 기능
-    h,w=image.shape[:2] # 이미지의 높이와 너비
-    center=(w//2,h//2) # 회전할 중심 좌표
-    matrix=cv2.getRotationMatrix2D(center, angle,1.0) # 원본 크기를 유지하면서 angle만큼 center를 기준으로 해서 회전함
-    rotated=cv2.warpAffine(image,matrix,(w,h)) # 회전한 이미지를 생성
-    return rotated # rotate_left, right에서 활용됨
 
 def rotate_left(): # 왼쪽으로 90도 회전!
     # 선택된 이미지가 없으면 return
-    global select_img
+    global select_img,image_on_canvas,new_width, new_height,canvas
     if select_img is None:
         return
-    select_img = rotate_img(select_img,90)
+    #select_img = rotate_img(select_img,90)
+    #print(canvas.winfo_height(),canvas.winfo_width())
+    select_img = cv2.rotate(select_img,cv2.ROTATE_90_CLOCKWISE)
+    #print(select_img.shape)
+    canvas.config(width=round(select_img.shape[1]*scale), height=round(select_img.shape[0]*scale))
+    #print(canvas.winfo_height(), canvas.winfo_width())
     update_blur_img(select_img)
 
 def rotate_right(): # 왼쪽으로 90도 회전!
@@ -241,7 +240,14 @@ def rotate_right(): # 왼쪽으로 90도 회전!
     global select_img
     if select_img is None:
         return
-    select_img = rotate_img(select_img,-90)
+
+    # 이미지를 돌릴때 더 간결하게 한줄로 적을 수 있는 코드가 있었음
+    #select_img = rotate_img(select_img,-90)
+
+    select_img = cv2.rotate(select_img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    # print(select_img.shape)
+    canvas.config(width=round(select_img.shape[1] * scale), height=round(select_img.shape[0] * scale))
+    # print(canvas.winfo_height(), canvas.winfo_width())
     update_blur_img(select_img)
 
 def update_blur_img(blur_select_img): # blur에서 blur 처리한 이미지를 컨버스 위에 보이게 함
@@ -249,7 +255,7 @@ def update_blur_img(blur_select_img): # blur에서 blur 처리한 이미지를 �
     blur_img=blur_select_img
     blur_img_RGB = cv2.cvtColor(blur_select_img, cv2.COLOR_BGR2RGB)
     # resize 전처리가 PIL함수이므로 이 줄에 적용시켜줘야하는거였음!!!!!!!
-    blur_img_PIL = Image.fromarray(blur_img_RGB).resize((new_width, new_height), Image.Resampling.LANCZOS)
+    blur_img_PIL = Image.fromarray(blur_img_RGB).resize((round(blur_select_img.shape[1]*scale), round(blur_select_img.shape[0]*scale)), Image.Resampling.LANCZOS)
     blur_img1 = ImageTk.PhotoImage(blur_img_PIL)
 
 
@@ -335,7 +341,7 @@ intensity_slider.pack(side='left', padx=10,pady=10)  # 아래 프레임에 추�
 intensity_slider.set(20)
 
 
-''''''
+
 def get_frame_size(): # 왼쪽 프레임 크기 확인
     print(f"Frame 크기: {left_frame.winfo_width()} x {left_frame.winfo_height()}")
 
@@ -352,3 +358,12 @@ style.theme_use("forest-light")
 
 
 testwindow.mainloop()
+
+'''
+def rotate_img(image,angle): # 이미지 회전 기능
+    h,w=image.shape[:2] # 이미지의 높이와 너비
+    center=(w//2,h//2) # 회전할 중심 좌표
+    matrix=cv2.getRotationMatrix2D(center, angle,1.0) # 원본 크기를 유지하면서 angle만큼 center를 기준으로 해서 회전함
+    rotated=cv2.warpAffine(image,matrix,(w,h)) # 회전한 이미지를 생성
+    return rotated # rotate_left, right에서 활용됨
+    '''
