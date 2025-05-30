@@ -207,7 +207,7 @@ def blur(intensity): # 블러 처리
     select_img = blur_select_img
 
     img_history.append(select_img)# 블러 씌운 이미지의 키값을 리스트에 저장
-    print("img_history",img_history)
+    #print("img_history",img_history)
     update_blur_img(blur_select_img)
 
 def pixel_blur(roi, mask): # 기존 filter 적용 방식보다 더 연산이 짧은 코드
@@ -250,9 +250,53 @@ def rotate_right(): # 왼쪽으로 90도 회전!
     # print(canvas.winfo_height(), canvas.winfo_width())
     update_blur_img(select_img)
 
+def face_blur():
+    global select_img
+    if select_img is None: # 이미지가 아직 열리지 않았으면
+        return
+    haar_cascade_file = "haarcascade_frontalface_default.xml"
+    gray_img = cv2.cvtColor(select_img, cv2.COLOR_BGR2GRAY)
+
+    # 예제 파일을 가져와 얼굴을 검출합니다.
+    classifier = cv2.CascadeClassifier(haar_cascade_file)
+    face=classifier.detectMultiScale(gray_img)
+    #print(face)
+
+    #for x, y, w, h in face:
+    #    cv2.rectangle(select_img, (x, y), (x + w, y + h), color=(0, 255, 0), thickness=2)
+
+
+    blur_select_img = select_img.copy()
+    #coords=[ix,iy,ex,ey] # 드래그한 사각형의 좌표
+    data = [1 / intensity for _ in range(intensity)] # 마스크 원소 지정
+    blur_mask = np.array(data, np.float32).reshape(int(math.sqrt(intensity)), int(math.sqrt(intensity))) # mask 크기에 행과 열 사이즈에 맞게 조절
+
+    start_x, start_y, end_x, end_y = face[0][0],face[0][1],face[0][0]+face[0][2],face[0][1]+face[0][3] # 기존 이미지의 좌표, 임시로 float형태를 int형으로 변환
+    #print(start_x, start_y, end_x, end_y)
+    #print(coord)
+    #print(scale)
+    roi = blur_select_img[start_y:end_y, start_x:end_x]
+
+    #print(start_x, start_y, end_x, end_y)
+    #print(roi)
+    #cv2.imshow("fuck",roi) # 브러처리한 부분
+    # 플러 처리할 data, mask 설정
+    blur_roi = pixel_blur(roi, blur_mask)
+
+    blur_select_img[start_y:end_y, start_x:end_x] = blur_roi
+    select_img = blur_select_img
+
+    img_history.append(select_img)# 블러 씌운 이미지의 키값을 리스트에 저장
+    #print("img_history",img_history)
+    update_blur_img(blur_select_img)
+
+
+
+
 def update_blur_img(blur_select_img): # blur에서 blur 처리한 이미지를 컨버스 위에 보이게 함
     global blur_img_label, blur_img,rect_id_list, rect_id, new_width, new_height
     blur_img=blur_select_img
+    #cv2.imshow('blur_img',blur_img)
     blur_img_RGB = cv2.cvtColor(blur_select_img, cv2.COLOR_BGR2RGB)
     # resize 전처리가 PIL함수이므로 이 줄에 적용시켜줘야하는거였음!!!!!!!
     blur_img_PIL = Image.fromarray(blur_img_RGB).resize((round(blur_select_img.shape[1]*scale), round(blur_select_img.shape[0]*scale)), Image.Resampling.LANCZOS)
@@ -276,8 +320,9 @@ def save_img_png(): # 이미지 저장하는 함수
     img_filetypes = (('png file', '*.png'), ('jpg files', '*.jpg'))
 
     img_path=filedialog.asksaveasfilename(title="save image",filetypes=img_filetypes)
-    print(type(blur_img))
+    #print(type(blur_img))
 
+    #cv2.imshow('blur_img', blur_img)
     # 경로 + 파일 형식
     # 만약에 끝에 파일명이 적어져있지 않으면 경로를 추가해 줌, lower는 소문자로 바꿔줌(대문자 방지)
     if not img_path.lower().endswith(".png"):
@@ -286,8 +331,6 @@ def save_img_png(): # 이미지 저장하는 함수
         img_path=img_path+".png" # if img_filetypes =="*.png" else img_path+".jpg"
 
     if select_img is not None and img_path:
-        if img_path.lower().endswith(".png"):
-            img_path = img_path[:-4]
         cv2.imwrite(img_path,blur_img)
 
 def save_img_jpg(): # 이미지 저장하는 함수
@@ -295,7 +338,7 @@ def save_img_jpg(): # 이미지 저장하는 함수
     img_filetypes = (('png file', '*.png'), ('jpg files', '*.jpg'))
 
     img_path=filedialog.asksaveasfilename(title="save image",filetypes=img_filetypes)
-    print(type(blur_img))
+    #print(type(blur_img))
 
     # 경로 + 파일 형식
     if not img_path.lower().endswith(".jpg"):
@@ -333,7 +376,7 @@ rolate_img_right=ttk.Button(right_frame,text='오른쪽으로 회전', command=r
 back=ttk.Button(right_frame,text="전으로 돌아가기", command=back_shape).pack(pady=10)
 return_btn=ttk.Button(right_frame, text='처음 이미지로 돌아가기',command=return_img).pack(pady=10)
 blur_img=ttk.Button(right_frame,text="블러 적용",command=lambda: blur(intensity)).pack(pady=10)
-
+face_blur_img=ttk.Button(right_frame,text="얼굴 블러 적용",command=face_blur).pack(pady=10)
 
 # 위치, 최소값, 최대밗, 수평 슬라이더, 트랙바 이름, 적용할 함수
 intensity_slider = ttk.Scale(down_frame, from_=1, to=50, orient="horizontal", command=update_intensity,length=300)
@@ -342,10 +385,9 @@ intensity_slider.set(20)
 
 
 
-def get_frame_size(): # 왼쪽 프레임 크기 확인
-    print(f"Frame 크기: {left_frame.winfo_width()} x {left_frame.winfo_height()}")
 
-testwindow.after(100, get_frame_size)  # 100ms 후 크기 확인
+
+  # 100ms 후 크기 확인
 
 # Create a style
 style = ttk.Style(testwindow)
@@ -360,6 +402,9 @@ style.theme_use("forest-light")
 testwindow.mainloop()
 
 '''
+def get_frame_size(): # 왼쪽 프레임 크기 확인
+    print(f"Frame 크기: {left_frame.winfo_width()} x {left_frame.winfo_height()}")
+    testwindow.after(100, get_frame_size)
 def rotate_img(image,angle): # 이미지 회전 기능
     h,w=image.shape[:2] # 이미지의 높이와 너비
     center=(w//2,h//2) # 회전할 중심 좌표
