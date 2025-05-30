@@ -254,12 +254,12 @@ def face_blur():
     global select_img
     if select_img is None: # 이미지가 아직 열리지 않았으면
         return
-    haar_cascade_file = "haarcascade_frontalface_default.xml"
-    gray_img = cv2.cvtColor(select_img, cv2.COLOR_BGR2GRAY)
+    face_recog_file = "haarcascade_frontalface_default.xml"
+    bgr2gray_img = cv2.cvtColor(select_img, cv2.COLOR_BGR2GRAY)
 
     # 예제 파일을 가져와 얼굴을 검출합니다.
-    classifier = cv2.CascadeClassifier(haar_cascade_file)
-    face=classifier.detectMultiScale(gray_img)
+    classifier = cv2.CascadeClassifier(face_recog_file)
+    face=classifier.detectMultiScale(bgr2gray_img)
     #print(face)
 
     #for x, y, w, h in face:
@@ -271,8 +271,8 @@ def face_blur():
     data = [1 / intensity for _ in range(intensity)] # 마스크 원소 지정
     blur_mask = np.array(data, np.float32).reshape(int(math.sqrt(intensity)), int(math.sqrt(intensity))) # mask 크기에 행과 열 사이즈에 맞게 조절
 
-    for x,y,w,h in face:
-        start_x, start_y, end_x, end_y = [x,y,x+w,y+h] # 기존 이미지의 좌표, 임시로 float형태를 int형으로 변환
+    for a,b,c,d in face:
+        start_x, start_y, end_x, end_y = [a,b,a+c,b+d] # 기존 이미지의 좌표, 임시로 float형태를 int형으로 변환
     #print(start_x, start_y, end_x, end_y)
     #print(coord)
     #print(scale)
