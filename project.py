@@ -271,20 +271,21 @@ def face_blur():
     data = [1 / intensity for _ in range(intensity)] # 마스크 원소 지정
     blur_mask = np.array(data, np.float32).reshape(int(math.sqrt(intensity)), int(math.sqrt(intensity))) # mask 크기에 행과 열 사이즈에 맞게 조절
 
-    start_x, start_y, end_x, end_y = face[0][0],face[0][1],face[0][0]+face[0][2],face[0][1]+face[0][3] # 기존 이미지의 좌표, 임시로 float형태를 int형으로 변환
+    for x,y,w,h in face:
+        start_x, start_y, end_x, end_y = [x,y,x+w,y+h] # 기존 이미지의 좌표, 임시로 float형태를 int형으로 변환
     #print(start_x, start_y, end_x, end_y)
     #print(coord)
     #print(scale)
-    roi = blur_select_img[start_y:end_y, start_x:end_x]
+        roi = blur_select_img[start_y:end_y, start_x:end_x]
 
     #print(start_x, start_y, end_x, end_y)
     #print(roi)
     #cv2.imshow("fuck",roi) # 브러처리한 부분
     # 플러 처리할 data, mask 설정
-    blur_roi = pixel_blur(roi, blur_mask)
+        blur_roi = pixel_blur(roi, blur_mask)
 
-    blur_select_img[start_y:end_y, start_x:end_x] = blur_roi
-    select_img = blur_select_img
+        blur_select_img[start_y:end_y, start_x:end_x] = blur_roi
+        select_img = blur_select_img
 
     img_history.append(select_img)# 블러 씌운 이미지의 키값을 리스트에 저장
     #print("img_history",img_history)
