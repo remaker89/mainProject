@@ -38,7 +38,6 @@ from PIL import Image,ImageTk
 from tkinter import ttk
 
 
-
 testwindow=tk.Tk() # window 생성
 testwindow.title('open file') # window 이름
 testwindow.geometry("900x800") # window의 크기지정
@@ -58,6 +57,8 @@ new_width, new_height, select_img1 ,image_on_canvas= None, None,None,None
 path_label = None
 intensity=121
 #rect_id = None # canvas 사각형의 id
+
+
 
 def openFile(): # 파일 여는 함수
     global select_img,select_img_label,canvas, scale,new_width, new_height,select_img1,path_label, image_on_canvas
@@ -119,6 +120,7 @@ def openFile(): # 파일 여는 함수
     image_on_canvas=canvas.create_image(0,0, anchor="nw", image=select_img1)
     canvas.image = select_img1
     # 마우스 이벤트 바인딩
+
     canvas.bind("<ButtonPress-1>", onmouse_down) # 마우스 누름
     canvas.bind("<B1-Motion>", onmouse_move) # 마우스 움직임
     canvas.bind("<ButtonRelease-1>", onmouse_up) # 마우스 때기
@@ -162,7 +164,14 @@ def back_shape(event=None): # 가장 마지막에 그린 도형 삭제
         rect_id=rect_id_list.pop() # list의 마지막 id 삭제
         canvas.delete(rect_id) # id를 가진 도형 삭제
 
+def click_b(event): # 가장 마지막에 그린 도형 삭제
+    tmp_back_shape()
 
+def tmp_back_shape():
+    global rect_id_list,rect_id
+    if rect_id_list:
+        rect_id=rect_id_list.pop() # list의 마지막 id 삭제
+        canvas.delete(rect_id)
 
 def update_intensity(val): # 트랙바 값 변경시에 실행됨
     global intensity
@@ -214,15 +223,14 @@ def pixel_blur(roi, mask): # 기존 filter 적용 방식보다 더 연산이 짧
     return cv2.filter2D(roi, -1, mask)
 
 
-def return_img(): # 도저히 다시 돌아가는 법을 못찾아 그냥 이미지를 다시 덮어씌우기로 함
+def return_img(event=None): # 도저히 다시 돌아가는 법을 못찾아 그냥 이미지를 다시 덮어씌우기로 함
     global select_img, img_history
     if img_history:
-        select_img=img_history[0].copy()
         select_img=img_history.clear() # history에 있는 정보 전체 지우기
         canvas.create_image(0,0, anchor="nw", image=select_img1)
 
 
-def rotate_left(): # 왼쪽으로 90도 회전!
+def rotate_left(event): # 왼쪽으로 90도 회전!
     # 선택된 이미지가 없으면 return
     global select_img,image_on_canvas,new_width, new_height,canvas
     if select_img is None:
@@ -235,7 +243,7 @@ def rotate_left(): # 왼쪽으로 90도 회전!
     #print(canvas.winfo_height(), canvas.winfo_width())
     update_blur_img(select_img)
 
-def rotate_right(): # 왼쪽으로 90도 회전!
+def rotate_right(event): # 왼쪽으로 90도 회전!
     # 선택된 이미지가 없으면 return
     global select_img
     if select_img is None:
@@ -250,7 +258,7 @@ def rotate_right(): # 왼쪽으로 90도 회전!
     # print(canvas.winfo_height(), canvas.winfo_width())
     update_blur_img(select_img)
 
-def face_blur():
+def face_blur(event):
     global select_img
     if select_img is None: # 이미지가 아직 열리지 않았으면
         return
@@ -316,7 +324,7 @@ def update_blur_img(blur_select_img): # blur에서 blur 처리한 이미지를 �
     canvas.image = blur_img1
 
 
-def save_img_png(): # 이미지 저장하는 함수
+def save_img_png(event): # 이미지 저장하는 함수
     # 파일형식을 img_types에 추가
     img_filetypes = (('png file', '*.png'), ('jpg files', '*.jpg'))
 
@@ -334,7 +342,7 @@ def save_img_png(): # 이미지 저장하는 함수
     if select_img is not None and img_path:
         cv2.imwrite(img_path,blur_img)
 
-def save_img_jpg(): # 이미지 저장하는 함수
+def save_img_jpg(event): # 이미지 저장하는 함수
     # 파일형식을 img_types에 추가
     img_filetypes = (('png file', '*.png'), ('jpg files', '*.jpg'))
 
@@ -349,6 +357,7 @@ def save_img_jpg(): # 이미지 저장하는 함수
 
     if select_img is not None and img_path:
         cv2.imwrite(img_path,blur_img)
+
 
 def fram(testwindow): # 프레임 생성
     global top_frame,down_frame,left_frame,right_frame
@@ -384,8 +393,13 @@ intensity_slider = ttk.Scale(down_frame, from_=1, to=50, orient="horizontal", co
 intensity_slider.pack(side='left', padx=10,pady=10)  # 아래 프레임에 추가
 intensity_slider.set(20)
 
-
-
+testwindow.bind("<KeyPress-b>", back_shape)
+testwindow.bind("<KeyPress-p>", save_img_png)
+testwindow.bind("<KeyPress-j>", save_img_jpg)
+testwindow.bind("<KeyPress-l>", rotate_left)
+testwindow.bind("<KeyPress-r>", rotate_right)
+testwindow.bind("<KeyPress-f>", return_img)
+testwindow.bind("<KeyPress-d>", face_blur)
 
 
   # 100ms 후 크기 확인
@@ -403,6 +417,21 @@ style.theme_use("forest-light")
 testwindow.mainloop()
 
 '''
+def down_key(event):
+    if event.keysym=="b":
+        back_shape()
+    if event.keysym=="p":
+        save_img_png()
+    if event.keysym=="j":
+        save_img_jpg()
+    if event.keysym=="l":
+        rotate_left()
+    if event.keysym=="r":
+        rotate_right()
+    if event.keysym=="f":
+        return_img()
+    if event.keysym=="d":
+        face_blur()
 def get_frame_size(): # 왼쪽 프레임 크기 확인
     print(f"Frame 크기: {left_frame.winfo_width()} x {left_frame.winfo_height()}")
     testwindow.after(100, get_frame_size)
