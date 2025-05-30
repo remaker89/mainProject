@@ -60,12 +60,17 @@ intensity=121
 
 
 
-def openFile(): # 파일 여는 함수
+def openFile(event=None): # 파일 여는 함수
     global select_img,select_img_label,canvas, scale,new_width, new_height,select_img1,path_label, image_on_canvas
     img_filetypes=(('png file','*.png'),('jpg files','*.jpg')) # 파일 타입 설정
 
+
     # 파일을 선택할 수 있는 메서드(파일 타입)
     root_select_img=filedialog.askopenfilename(filetypes=img_filetypes)
+
+    # 이미지를 선택하지 않아 경로가 비어있는 겅우 return
+    if not root_select_img:
+        return
 
     if path_label is not None: # 경로 label이 비어있지 않으면 삭제하고 새로운 경로를 실행 시킴
         path_label.destroy()
@@ -77,6 +82,11 @@ def openFile(): # 파일 여는 함수
 
     #print(type(root_select_img))
     select_img=cv2.imread(root_select_img)
+
+    # 이미지를 선택하지 않아 이미지가 없는 경우 return
+    if select_img is None:
+        return
+
     #print(type(select_img))
     # opencv로 직접 처리가 가능하지만 tkinter의 label에서 표시하기 위해 객체로 변환해야함
     select_img_RGB = cv2.cvtColor(select_img, cv2.COLOR_BGR2RGB)
@@ -230,7 +240,7 @@ def return_img(event=None): # 도저히 다시 돌아가는 법을 못찾아 그
         canvas.create_image(0,0, anchor="nw", image=select_img1)
 
 
-def rotate_left(event): # 왼쪽으로 90도 회전!
+def rotate_left(event=None): # 왼쪽으로 90도 회전!
     # 선택된 이미지가 없으면 return
     global select_img,image_on_canvas,new_width, new_height,canvas
     if select_img is None:
@@ -243,7 +253,7 @@ def rotate_left(event): # 왼쪽으로 90도 회전!
     #print(canvas.winfo_height(), canvas.winfo_width())
     update_blur_img(select_img)
 
-def rotate_right(event): # 왼쪽으로 90도 회전!
+def rotate_right(event=None): # 왼쪽으로 90도 회전!
     # 선택된 이미지가 없으면 return
     global select_img
     if select_img is None:
@@ -258,7 +268,7 @@ def rotate_right(event): # 왼쪽으로 90도 회전!
     # print(canvas.winfo_height(), canvas.winfo_width())
     update_blur_img(select_img)
 
-def face_blur(event):
+def face_blur(event=None):
     global select_img
     if select_img is None: # 이미지가 아직 열리지 않았으면
         return
@@ -393,6 +403,7 @@ intensity_slider = ttk.Scale(down_frame, from_=1, to=50, orient="horizontal", co
 intensity_slider.pack(side='left', padx=10,pady=10)  # 아래 프레임에 추가
 intensity_slider.set(20)
 
+testwindow.bind("<KeyPress-o>", openFile)
 testwindow.bind("<KeyPress-b>", back_shape)
 testwindow.bind("<KeyPress-p>", save_img_png)
 testwindow.bind("<KeyPress-j>", save_img_jpg)
