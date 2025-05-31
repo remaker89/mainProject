@@ -62,12 +62,28 @@ intensity=121
 
 
 def openFile(event=None): # 파일 여는 함수
-    global select_img,select_img_label,canvas, scale,new_width, new_height,select_img1,path_label, image_on_canvas,original_img
+    global select_img,select_img_label,canvas, scale,new_width, new_height,select_img1,path_label, image_on_canvas,original_img,blur_img_label
     img_filetypes=(('png file','*.png'),('jpg files','*.jpg')) # 파일 타입 설정
 
 
     # 파일을 선택할 수 있는 메서드(파일 타입)
     root_select_img=filedialog.askopenfilename(filetypes=img_filetypes)
+
+    # 만약에 이미지를 새로 열면 각각의 변수들을 초기화
+    coord.clear()
+    blured_coord.clear()
+    rect_id_list.clear()
+    img_history.clear()
+
+    select_img_label = None
+    blur_img_label = None
+
+    select_img = None
+    original_img = None
+    select_img1 = None
+
+    if canvas:
+        canvas.delete("all")
 
     # 이미지를 선택하지 않아 경로가 비어있는 겅우 return
     if not root_select_img:
@@ -75,6 +91,9 @@ def openFile(event=None): # 파일 여는 함수
 
     if path_label is not None: # 경로 label이 비어있지 않으면 삭제하고 새로운 경로를 실행 시킴
         path_label.destroy()
+
+    if root_select_img:
+        select_img
 
         # 새로운 경로 라벨을 생성하고 저장
     path_label = Label(testwindow, text=root_select_img)
@@ -366,6 +385,20 @@ def save_img_png(event=None): # 이미지 저장하는 함수
     img_filetypes = (('png file', '*.png'), ('jpg files', '*.jpg'))
 
     img_path=filedialog.asksaveasfilename(title="save image",filetypes=img_filetypes)
+
+    if not img_path:
+        return
+
+    # 블러를 하지 않은 이미지를 저장할때 또는 회전만 한 이미지를 저장할때의 예외 처리
+    if blur_img is not None and blur_img.size > 0:
+        img_save = blur_img
+    elif select_img is not None:
+        img_save = select_img
+    elif original_img is not None:
+        img_save = original_img
+    else:
+        print("⚠ 저장할 이미지가 없습니다.")
+        return
     #print(type(blur_img))
 
     #cv2.imshow('blur_img', blur_img)
@@ -376,8 +409,8 @@ def save_img_png(event=None): # 이미지 저장하는 함수
             img_path = img_path[:-4]
         img_path=img_path+".png" # if img_filetypes =="*.png" else img_path+".jpg"
 
-    if select_img is not None and img_path:
-        cv2.imwrite(img_path,blur_img)
+
+    cv2.imwrite(img_path,img_save)
 
 def save_img_jpg(event=None): # 이미지 저장하는 함수
     # 파일형식을 img_types에 추가
