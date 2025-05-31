@@ -248,6 +248,7 @@ def return_img(event=None): # 도저히 다시 돌아가는 법을 못찾아 그
             coord.clear()
         canvas.delete("all")
         canvas.create_image(0,0, anchor="nw", image=select_img1)
+        canvas.config(width=round(select_img.shape[1] * scale), height=round(select_img.shape[0] * scale))
 
 
 def rotate_left(event=None): # 왼쪽으로 90도 회전!
@@ -257,7 +258,7 @@ def rotate_left(event=None): # 왼쪽으로 90도 회전!
         return
     #select_img = rotate_img(select_img,90)
     #print(canvas.winfo_height(),canvas.winfo_width())
-    select_img = cv2.rotate(select_img,cv2.ROTATE_90_CLOCKWISE)
+    select_img = cv2.rotate(select_img, cv2.ROTATE_90_COUNTERCLOCKWISE)
     #print(select_img.shape)
     canvas.config(width=round(select_img.shape[1]*scale), height=round(select_img.shape[0]*scale))
     #print(canvas.winfo_height(), canvas.winfo_width())
@@ -272,7 +273,7 @@ def rotate_right(event=None): # 왼쪽으로 90도 회전!
     # 이미지를 돌릴때 더 간결하게 한줄로 적을 수 있는 코드가 있었음
     #select_img = rotate_img(select_img,-90)
 
-    select_img = cv2.rotate(select_img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    select_img = cv2.rotate(select_img,cv2.ROTATE_90_CLOCKWISE)
     # print(select_img.shape)
     canvas.config(width=round(select_img.shape[1] * scale), height=round(select_img.shape[0] * scale))
     # print(canvas.winfo_height(), canvas.winfo_width())
