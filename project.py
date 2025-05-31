@@ -173,6 +173,9 @@ def onmouse_up(event): # 마우스 방향에 따른 사각형 그리기
 
 def back_shape(event=None): # 가장 마지막에 그린 도형 삭제
     global rect_id_list,coord
+
+    if not rect_id_list:
+        return
     if rect_id_list:
         last_id = canvas.find_all()[-1] # 캔버스에 있는 모든 도형들을 확인하면서 제일 마지막에 생성된 사각형
         canvas.delete(last_id) # 캔버스에 있는 해당 id를 삭제
