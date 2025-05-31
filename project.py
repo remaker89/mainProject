@@ -51,7 +51,7 @@ original_img=None
 drawing = False  # 드래그 상태
 ix, iy = -1, -1 # 시작 좌표
 ex, ey = -1, -1
-rect_id_list ,img_history,coord=[],[],[]
+rect_id_list ,img_history,coord,blured_coord=[],[],[],[]
 scale = 1.0
 canvas = None
 new_width, new_height, select_img1 ,image_on_canvas= None, None,None,None
@@ -199,7 +199,7 @@ def update_intensity(val): # 트랙바 값 변경시에 실행됨
 
 
 def blur(intensity): # 블러 처리
-    global img_history,select_img,coord
+    global img_history,select_img,coord, blured_coord
 
     if select_img is None or len(coord)==0: # 이미지가 아직 열리지 않았으면
         return
@@ -210,7 +210,21 @@ def blur(intensity): # 블러 처리
     data = [1 / intensity for _ in range(intensity)] # 마스크 원소 지정
     blur_mask = np.array(data, np.float32).reshape(int(math.sqrt(intensity)), int(math.sqrt(intensity))) # mask 크기에 행과 열 사이즈에 맞게 조절
 
+    # 기존에 블러처리된 부분을 새로운 블러 처리에 제외시키 위한
+    new_coords_blur=[]
+
+    # 블러 처리를 완료한 영역은 넘기고 아직 블러 처리되지 않는 부분에는 list로 저장함
     for i in coord:
+        if i in blured_coord:
+            continue  # 이미 블러 처리된 영역은 스킵
+        new_coords_blur.append(i)
+
+    # 블러가 여러개 생성될 시 복잡할 수 잇어 블러 처리 완료된 좌표는 제거함
+    for i in new_coords_blur:
+        if i in coord:
+            coord.remove(i)
+
+    for i in new_coords_blur:
         start_x, start_y, end_x, end_y = [int(c * (1/scale)) for c in i] # 기존 이미지의 좌표, 임시로 float형태를 int형으로 변환
         #print(coord)
         #print(scale)
@@ -225,6 +239,7 @@ def blur(intensity): # 블러 처리
         blur_roi = pixel_blur(roi, blur_mask)
 
         blur_select_img[start_y:end_y, start_x:end_x] = blur_roi
+        blured_coord.append(i)
     select_img = blur_select_img
 
     img_history.append(select_img)# 블러 씌운 이미지의 키값을 리스트에 저장
@@ -236,10 +251,11 @@ def pixel_blur(roi, mask): # 기존 filter 적용 방식보다 더 연산이 짧
 
 
 def return_img(event=None): # 도저히 다시 돌아가는 법을 못찾아 그냥 이미지를 다시 덮어씌우기로 함
-    global select_img, img_history,rect_id
+    global select_img, img_history,rect_id,blured_coord,coord
     if img_history:
         #img_history.clear() # history에 있는 정보 전체 지우기
         rect_id_list.clear()
+        blured_coord.clear()
         select_img = original_img.copy()
         # 이미지를 다시 띄우면서 다른 것들도 리셋
         if rect_id_list:
