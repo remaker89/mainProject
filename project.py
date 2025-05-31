@@ -46,6 +46,7 @@ testwindow.resizable(0,0) # window의 창의 크기 조절
 select_img_label=None # 선탟한 이미지의 라벨 변수
 blur_img_label=None
 select_img=None
+original_img=None
 
 drawing = False  # 드래그 상태
 ix, iy = -1, -1 # 시작 좌표
@@ -61,7 +62,7 @@ intensity=121
 
 
 def openFile(event=None): # 파일 여는 함수
-    global select_img,select_img_label,canvas, scale,new_width, new_height,select_img1,path_label, image_on_canvas
+    global select_img,select_img_label,canvas, scale,new_width, new_height,select_img1,path_label, image_on_canvas,original_img
     img_filetypes=(('png file','*.png'),('jpg files','*.jpg')) # 파일 타입 설정
 
 
@@ -82,6 +83,7 @@ def openFile(event=None): # 파일 여는 함수
 
     #print(type(root_select_img))
     select_img=cv2.imread(root_select_img)
+    original_img=select_img.copy() # 처음으로 돌아가는 버튼을 눌렀을때의 오류를 해결하기위한 새로운 변수에 이미지 저장
 
     # 이미지를 선택하지 않아 이미지가 없는 경우 return
     if select_img is None:
@@ -143,9 +145,10 @@ def onmouse_down(event): # 마우스를 클릭하면
 
     random_color = "#{:06x}".format(random.randint(0, 0xFFFFFF)) # 랜덤한 컬러 적용
     # id의 위치를 확인하고 사각형의 형태로 그림
-    rect_id = canvas.create_rectangle(ix, iy, event.x, event.y,fill=random_color, outline='white', width=2)
-    rect_id_list.append(rect_id) # list에 rect_id를 저장
-    #print(rect_id_list)
+    new_id = rect_id_list[-1] + 1 if rect_id_list else 1+1
+    rect_id = canvas.create_rectangle(ix, iy, event.x, event.y, fill=random_color, outline='white', width=2)
+    rect_id_list.append(new_id) # list에 rect_id를 저장
+    print(rect_id_list)
 
 
 def onmouse_move(event):
@@ -169,19 +172,15 @@ def onmouse_up(event): # 마우스 방향에 따른 사각형 그리기
     coord.append(tmp)
 
 def back_shape(event=None): # 가장 마지막에 그린 도형 삭제
-    global rect_id_list,rect_id
+    global rect_id_list,coord
     if rect_id_list:
-        rect_id=rect_id_list.pop() # list의 마지막 id 삭제
-        canvas.delete(rect_id) # id를 가진 도형 삭제
+        last_id = canvas.find_all()[-1] # 캔버스에 있는 모든 도형들을 확인하면서 제일 마지막에 생성된 사각형
+        canvas.delete(last_id) # 캔버스에 있는 해당 id를 삭제
+        rect_id_list.pop() # id기록에서 삭제
+    if coord:
+        coord.pop(-1)
+    canvas.delete(last_id) # id를 가진 도형 삭제
 
-def click_b(event): # 가장 마지막에 그린 도형 삭제
-    tmp_back_shape()
-
-def tmp_back_shape():
-    global rect_id_list,rect_id
-    if rect_id_list:
-        rect_id=rect_id_list.pop() # list의 마지막 id 삭제
-        canvas.delete(rect_id)
 
 def update_intensity(val): # 트랙바 값 변경시에 실행됨
     global intensity
@@ -234,9 +233,17 @@ def pixel_blur(roi, mask): # 기존 filter 적용 방식보다 더 연산이 짧
 
 
 def return_img(event=None): # 도저히 다시 돌아가는 법을 못찾아 그냥 이미지를 다시 덮어씌우기로 함
-    global select_img, img_history
+    global select_img, img_history,rect_id
     if img_history:
-        select_img=img_history.clear() # history에 있는 정보 전체 지우기
+        #img_history.clear() # history에 있는 정보 전체 지우기
+        rect_id_list.clear()
+        select_img = original_img.copy()
+        # 이미지를 다시 띄우면서 다른 것들도 리셋
+        if rect_id_list:
+            rect_id_list.clear()
+        if coord:
+            coord.clear()
+        canvas.delete("all")
         canvas.create_image(0,0, anchor="nw", image=select_img1)
 
 
@@ -334,7 +341,7 @@ def update_blur_img(blur_select_img): # blur에서 blur 처리한 이미지를 �
     canvas.image = blur_img1
 
 
-def save_img_png(event): # 이미지 저장하는 함수
+def save_img_png(event=None): # 이미지 저장하는 함수
     # 파일형식을 img_types에 추가
     img_filetypes = (('png file', '*.png'), ('jpg files', '*.jpg'))
 
@@ -352,7 +359,7 @@ def save_img_png(event): # 이미지 저장하는 함수
     if select_img is not None and img_path:
         cv2.imwrite(img_path,blur_img)
 
-def save_img_jpg(event): # 이미지 저장하는 함수
+def save_img_jpg(event=None): # 이미지 저장하는 함수
     # 파일형식을 img_types에 추가
     img_filetypes = (('png file', '*.png'), ('jpg files', '*.jpg'))
 
@@ -375,7 +382,7 @@ def fram(testwindow): # 프레임 생성
     down_frame=tk.Frame(testwindow,relief="sunken",bg='green')
     down_frame.pack(side="bottom",fill="x",expand=False,padx=20,pady=20)
 
-    top_frame=tk.Frame(testwindow,relief="sunken",bg='black')
+    top_frame=tk.Frame(testwindow,relief="sunken",bg='green')
     top_frame.pack(side="top",fill="both",expand=True)
 
     left_frame=tk.Frame(top_frame,width=400,height=400,relief="solid")
