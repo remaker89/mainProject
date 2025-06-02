@@ -165,7 +165,8 @@ def onmouse_down(event): # 마우스를 클릭하면
     new_id = rect_id_list[-1] + 1 if rect_id_list else 1+1
     rect_id = canvas.create_rectangle(ix, iy, event.x, event.y, fill=random_color, outline='white', width=2)
     rect_id_list.append(new_id) # list에 rect_id를 저장
-    print(rect_id_list)
+    #
+    #print(rect_id_list)
 
 
 def onmouse_move(event):
@@ -271,8 +272,6 @@ def return_img(event=None): # 도저히 다시 돌아가는 법을 못찾아 그
     global select_img, img_history,rect_id,blured_coord,coord
     if img_history:
         #img_history.clear() # history에 있는 정보 전체 지우기
-        rect_id_list.clear()
-        blured_coord.clear()
         select_img = original_img.copy()
         # 이미지를 다시 띄우면서 다른 것들도 리셋
         if rect_id_list:
